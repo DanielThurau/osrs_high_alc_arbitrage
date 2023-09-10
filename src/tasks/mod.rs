@@ -14,6 +14,7 @@ pub mod update_latest;
 
 #[async_trait]
 pub trait SchedulerTask {
+    // TODO return a enum error that is recoverable or non-recoverable
     async fn run(&mut self, context: &mut Context) -> Result<(), String>;
     fn timer(&self) -> u64;
 }

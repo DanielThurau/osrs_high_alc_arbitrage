@@ -57,7 +57,7 @@ impl Scheduler {
 
         // Flush the most up to date data to disk for later use.
         self.timers.add_task(FlushData(FlushDataTask {
-            timer: now.as_secs() + 30,
+            timer: now.as_secs() + 10,
         }));
 
         // Scheduler loop
@@ -66,7 +66,6 @@ impl Scheduler {
             let now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap();
-            println!("Running task {}", self.task_count);
 
             // If there are timers for a task that are ringing, add the task to the queue.
             if let Some(timer) = self.timers.next_timer() {
@@ -96,7 +95,18 @@ impl Scheduler {
 
             // If there's a task to run, run it!
             if let Some(task) = &mut self.pop_task() {
-                task.run(&mut self.context).await.unwrap();
+                match task.run(&mut self.context).await {
+                    Ok(_) => (),
+                    Err(err_msg) => {
+                        println!("Error encountered in task {:?}. {}", task, err_msg);
+                        return;
+                    }
+                }
+                println!("Running task {}", self.task_count);
+            } else {
+                if self.task_count % 100 == 0 {
+                    println!("Running task {}", self.task_count);
+                }
             }
 
             sleep(Duration::from_secs(1 / self.hertz));
